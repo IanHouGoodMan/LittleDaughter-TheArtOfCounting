@@ -10,6 +10,8 @@ count by category, find what they missed, and discover the formula from a table 
 
 Available in **中文 · English · Français**.
 
+**Try it:** <https://ianhougoodman.github.io/LittleDaughter-TheArtOfCounting/>
+
 ## Module 1: Count the triangles
 
 - Click three corners to "catch" a triangle on a triangular grid.
@@ -27,6 +29,8 @@ Shapes: parallelogram strip, big triangle, trapezoid.
 | `src/CountingArt.Core` | Pure C# counting engine (no UI dependencies) |
 | `src/CountingArt.Web` | Blazor WebAssembly front end (installable PWA, works offline) |
 | `tests/CountingArt.Core.Tests` | xUnit tests; brute-force counts are checked against closed-form formulas |
+| `docs/discussion-2026-11-18.md` | Project discussion notes (in Chinese): motivation, tech choice, outreach |
+| `docs/references/` | Reference material, including *Counting Rocks!* (CC BY 4.0) |
 
 ## Run locally (Windows, macOS, Linux)
 
@@ -55,4 +59,8 @@ Every push to `main` runs the tests and publishes the site to GitHub Pages
 
 ## License
 
-[MIT](LICENSE)
+[MIT](LICENSE) for the code.
+
+`docs/references/CountingRocks-2025-05-04.pdf` is *Counting Rocks! An Introduction to Combinatorics*
+by Henry Adams, Kelly Emmrich, Maria Gillespie, Shannon Golden, and Rachel Pries, licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) and redistributed unmodified.
