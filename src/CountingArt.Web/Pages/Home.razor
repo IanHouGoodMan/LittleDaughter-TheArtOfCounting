@@ -1,0 +1,286 @@
+@page "/"
+@using CountingArt.Core.TriangleGrid
+@implements IDisposable
+@inject UiText T
+
+<PageTitle>@T["AppTitle"]</PageTitle>
+
+<h1>@T["AppTitle"]</h1>
+<p class="instructions">@T["Instructions"]</p>
+
+<section class="controls">
+    <label>
+        @T["Shape"]
+        <select value="@_shape" @onchange="OnShapeChanged">
+            <option value="@ShapeKind.Parallelogram">@T["ShapeParallelogram"]</option>
+            <option value="@ShapeKind.Triangle">@T["ShapeTriangle"]</option>
+            <option value="@ShapeKind.Trapezoid">@T["ShapeTrapezoid"]</option>
+        </select>
+    </label>
+
+    @if (_shape == ShapeKind.Triangle)
+    {
+        <label>
+            @T["Size"]
+            <input type="number" min="1" max="@MaxTriangleSize" value="@_width" @onchange="e => OnNumberChanged(e, isWidth: true)" />
+        </label>
+    }
+    else
+    {
+        <label>
+            @T["Width"]
+            <input type="number" min="1" max="@MaxWidth" value="@_width" @onchange="e => OnNumberChanged(e, isWidth: true)" />
+        </label>
+        <label>
+            @T["Rows"]
+            <input type="number" min="1" max="@MaxRows" value="@_rows" @onchange="e => OnNumberChanged(e, isWidth: false)" />
+        </label>
+    }
+
+    <button class="secondary" @onclick="StartOver">@T["StartOver"]</button>
+</section>
+
+<section class="board">
+    <TriangleFigureView Figure="_session.Figure"
+                        FoundTriangles="_session.Found"
+                        SelectedPoints="_selected"
+                        Highlight="CurrentAnswer"
+                        HighlightWasFound="@(CurrentAnswer is { } a && _session.HasFound(a))"
+                        OnPointClicked="OnPointClicked" />
+</section>
+
+<section class="status">
+    <p class="found-count">@T.Format("FoundCount", _session.Found.Count)</p>
+    @if (_message is not null)
+    {
+        <p class="message @_messageClass">@_message</p>
+    }
+    @if (_selected.Count > 0)
+    {
+        <button class="secondary" @onclick="() => _selected.Clear()">@T["ClearPoints"]</button>
+    }
+</section>
+
+<section class="actions">
+    <button @onclick="() => _showCheck = !_showCheck">@T["CheckWork"]</button>
+    <button class="secondary" @onclick="ToggleAnswers">@(_showAnswers ? T["HideAnswers"] : T["ShowAnswers"])</button>
+</section>
+
+@if (_showCheck)
+{
+    <section class="panel">
+        @if (_session.IsComplete)
+        {
+            <p class="message good">@T["AllDone"]</p>
+        }
+        else
+        {
+            <h2>@T["CheckTitle"]</h2>
+            <table>
+                <thead>
+                    <tr><th>@T["Kind"]</th><th>@T["YouFound"]</th><th>@T["Status"]</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in _session.Progress())
+                    {
+                        <tr class="@(p.IsComplete ? "done" : "missing")">
+                            <td>@KindName(p.Category)</td>
+                            <td>@p.Found</td>
+                            <td>@(p.IsComplete ? T["KindDone"] : T["KindMissing"])</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </section>
+}
+
+@if (CurrentAnswer is { } answer)
+{
+    <section class="panel">
+        <p><strong>@T.Format("TotalCount", _session.AllTriangles.Count)</strong></p>
+        <table>
+            <thead>
+                <tr><th>@T["Kind"]</th><th>@T["YouFound"]</th><th>@T["Total"]</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var p in _session.Progress())
+                {
+                    <tr class="@(p.IsComplete ? "done" : "missing")">
+                        <td>@KindName(p.Category)</td>
+                        <td>@p.Found</td>
+                        <td>@p.Total</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <div class="stepper">
+            <button class="secondary" disabled="@(_answerIndex <= 0)" @onclick="() => _answerIndex--">@T["Previous"]</button>
+            <span>
+                @T.Format("Step", _answerIndex + 1, _session.AllTriangles.Count) · @KindName(answer.Category) ·
+                @(_session.HasFound(answer) ? T["YouFoundThis"] : T["YouMissedThis"])
+            </span>
+            <button class="secondary" disabled="@(_answerIndex >= _session.AllTriangles.Count - 1)" @onclick="() => _answerIndex++">@T["Next"]</button>
+        </div>
+
+        <h2>@T["PatternTitle"]</h2>
+        <table>
+            <thead>
+                <tr><th>@PatternParameterName</th><th>@T["Total"]</th><th>@T["Increase"]</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var row in PatternRows())
+                {
+                    <tr class="@(row.Parameter == _width ? "current" : "")">
+                        <td>@row.Parameter</td>
+                        <td>@row.Total</td>
+                        <td>@(row.Increase is { } inc ? $"+{inc}" : "")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </section>
+}
+
+@code {
+    private enum ShapeKind { Parallelogram, Triangle, Trapezoid }
+
+    private sealed record PatternRow(int Parameter, int Total, int? Increase);
+
+    private const int MaxWidth = 12;
+    private const int MaxRows = 6;
+    private const int MaxTriangleSize = 8;
+
+    // Starts with the worksheet figure: 3 rows, 7 units wide.
+    private ShapeKind _shape = ShapeKind.Parallelogram;
+    private int _width = 7;
+    private int _rows = 3;
+
+    private CountingSession _session = new(TriangleGridFigure.Parallelogram(7, 3));
+    private readonly List<LatticePoint> _selected = [];
+    private string? _message;
+    private string _messageClass = "";
+    private bool _showCheck;
+    private bool _showAnswers;
+    private int _answerIndex;
+
+    private GridTriangle? CurrentAnswer =>
+        _showAnswers && _session.AllTriangles.Count > 0 ? _session.AllTriangles[_answerIndex] : null;
+
+    private string PatternParameterName => _shape == ShapeKind.Triangle ? T["Size"] : T["Width"];
+
+    protected override void OnInitialized() => T.Changed += OnLanguageChanged;
+
+    public void Dispose() => T.Changed -= OnLanguageChanged;
+
+    private void OnLanguageChanged() => InvokeAsync(StateHasChanged);
+
+    private string KindName(TriangleCategory c) =>
+        $"{T["Size"]} {c.Size}, {(c.Orientation == Orientation.Up ? T["Up"] : T["Down"])}";
+
+    private void OnShapeChanged(ChangeEventArgs e)
+    {
+        _shape = Enum.Parse<ShapeKind>(e.Value?.ToString() ?? nameof(ShapeKind.Parallelogram));
+        if (_shape == ShapeKind.Triangle)
+        {
+            _width = Math.Min(_width, 4);
+        }
+
+        Rebuild();
+    }
+
+    private void OnNumberChanged(ChangeEventArgs e, bool isWidth)
+    {
+        if (!int.TryParse(e.Value?.ToString(), out var value))
+        {
+            return;
+        }
+
+        if (isWidth)
+        {
+            _width = value;
+        }
+        else
+        {
+            _rows = value;
+        }
+
+        Rebuild();
+    }
+
+    private TriangleGridFigure BuildFigure(int width) => _shape switch
+    {
+        ShapeKind.Triangle => TriangleGridFigure.Triangle(width),
+        ShapeKind.Trapezoid => TriangleGridFigure.Trapezoid(width, _rows),
+        _ => TriangleGridFigure.Parallelogram(width, _rows),
+    };
+
+    private void Rebuild()
+    {
+        _rows = Math.Clamp(_rows, 1, MaxRows);
+        _width = _shape == ShapeKind.Triangle
+            ? Math.Clamp(_width, 1, MaxTriangleSize)
+            : Math.Clamp(_width, _shape == ShapeKind.Trapezoid ? _rows : 1, MaxWidth);
+        _session = new CountingSession(BuildFigure(_width));
+        ResetProgress();
+    }
+
+    private void StartOver()
+    {
+        _session = new CountingSession(_session.Figure);
+        ResetProgress();
+    }
+
+    private void ResetProgress()
+    {
+        _selected.Clear();
+        _message = null;
+        _showCheck = false;
+        _showAnswers = false;
+        _answerIndex = 0;
+    }
+
+    private void ToggleAnswers()
+    {
+        _showAnswers = !_showAnswers;
+        _answerIndex = 0;
+    }
+
+    private void OnPointClicked(LatticePoint point)
+    {
+        if (!_selected.Remove(point))
+        {
+            _selected.Add(point);
+        }
+
+        if (_selected.Count < 3)
+        {
+            return;
+        }
+
+        var result = _session.Submit(_selected[0], _selected[1], _selected[2], out var triangle);
+        _selected.Clear();
+        (_message, _messageClass) = result switch
+        {
+            SubmissionResult.NewTriangle => (
+                T.Format("MsgNew", triangle.Size, triangle.Orientation == Orientation.Up ? T["Up"] : T["Down"]), "good"),
+            SubmissionResult.AlreadyFound => (T["MsgAlready"], "info"),
+            SubmissionResult.SidesNotDrawn => (T["MsgSidesNotDrawn"], "warn"),
+            _ => (T["MsgNotGrid"], "warn"),
+        };
+    }
+
+    private IEnumerable<PatternRow> PatternRows()
+    {
+        var first = _shape == ShapeKind.Trapezoid ? _rows : 1;
+        var last = _shape == ShapeKind.Triangle ? MaxTriangleSize : MaxWidth;
+        int? previous = null;
+        for (var n = first; n <= last; n++)
+        {
+            var total = BuildFigure(n).FindAllTriangles().Count;
+            yield return new PatternRow(n, total, total - previous);
+            previous = total;
+        }
+    }
+}

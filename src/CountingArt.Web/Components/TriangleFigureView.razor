@@ -1,0 +1,79 @@
+@using System.Globalization
+@using CountingArt.Core.TriangleGrid
+
+<svg class="figure" viewBox="0 0 @F(_width) @F(_height)" role="img">
+    @foreach (var t in FoundTriangles)
+    {
+        <polygon class="found size-@Math.Min(t.Size, 6)" points="@Polygon(t)" />
+    }
+
+    @if (Highlight is { } h)
+    {
+        <polygon class="@(HighlightWasFound ? "highlight found-one" : "highlight missed-one")" points="@Polygon(h)" />
+    }
+
+    @foreach (var e in Figure.Edges)
+    {
+        var (x1, y1) = Map(e.P);
+        var (x2, y2) = Map(e.Q);
+        <line class="edge" x1="@F(x1)" y1="@F(y1)" x2="@F(x2)" y2="@F(y2)" />
+    }
+
+    @foreach (var p in Figure.Points)
+    {
+        var (x, y) = Map(p);
+        var selected = SelectedPoints.Contains(p);
+        <g class="point @(selected ? "selected" : "")" @onclick="() => OnPointClicked.InvokeAsync(p)">
+            <circle class="hit" cx="@F(x)" cy="@F(y)" r="18" />
+            <circle class="dot" cx="@F(x)" cy="@F(y)" r="@(selected ? 9 : 5)" />
+        </g>
+    }
+</svg>
+
+@code {
+    private const double Unit = 64;
+    private const double Padding = 28;
+
+    private double _minX;
+    private double _maxY;
+    private double _width;
+    private double _height;
+
+    [Parameter, EditorRequired]
+    public TriangleGridFigure Figure { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyCollection<GridTriangle> FoundTriangles { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyCollection<LatticePoint> SelectedPoints { get; set; } = [];
+
+    [Parameter]
+    public GridTriangle? Highlight { get; set; }
+
+    [Parameter]
+    public bool HighlightWasFound { get; set; }
+
+    [Parameter]
+    public EventCallback<LatticePoint> OnPointClicked { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        var coords = Figure.Points.Select(GridGeometry.ToCartesian).ToArray();
+        _minX = coords.Min(c => c.X);
+        _maxY = coords.Max(c => c.Y);
+        _width = (coords.Max(c => c.X) - _minX) * Unit + 2 * Padding;
+        _height = (_maxY - coords.Min(c => c.Y)) * Unit + 2 * Padding;
+    }
+
+    private (double X, double Y) Map(LatticePoint p)
+    {
+        var (x, y) = GridGeometry.ToCartesian(p);
+        return (Padding + (x - _minX) * Unit, Padding + (_maxY - y) * Unit);
+    }
+
+    private string Polygon(GridTriangle t) =>
+        string.Join(' ', t.Vertices.Select(v => { var (x, y) = Map(v); return $"{F(x)},{F(y)}"; }));
+
+    private static string F(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+}

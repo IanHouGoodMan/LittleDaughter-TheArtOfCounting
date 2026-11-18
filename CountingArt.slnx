@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/CountingArt.Core/CountingArt.Core.csproj" />
+    <Project Path="src/CountingArt.Web/CountingArt.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/CountingArt.Core.Tests/CountingArt.Core.Tests.csproj" />
+  </Folder>
+</Solution>

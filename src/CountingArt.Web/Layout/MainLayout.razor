@@ -1,0 +1,56 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject UiText T
+@inject IJSRuntime JS
+
+<header class="top-bar">
+    <span class="brand">Counting Art</span>
+    <label class="language">
+        @T["Language"]
+        <select value="@T.Language" @onchange="OnLanguageChanged">
+            @foreach (var (language, name) in UiText.NativeNames)
+            {
+                <option value="@language">@name</option>
+            }
+        </select>
+    </label>
+</header>
+
+<main>
+    @Body
+</main>
+
+<footer>
+    <a href="https://github.com/IanHouGoodMan/LittleDaughter-TheArtOfCounting" target="_blank" rel="noopener">GitHub</a>
+    · MIT License
+</footer>
+
+@code {
+    private const string StorageKey = "countingart.language";
+
+    protected override void OnInitialized() => T.Changed += OnTextChanged;
+
+    public void Dispose() => T.Changed -= OnTextChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+
+        var saved = await JS.InvokeAsync<string?>("localStorage.getItem", StorageKey);
+        T.SetLanguage(UiText.FromCode(saved ?? System.Globalization.CultureInfo.CurrentUICulture.Name));
+    }
+
+    private async Task OnLanguageChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<UiLanguage>(e.Value?.ToString(), out var language))
+        {
+            T.SetLanguage(language);
+            await JS.InvokeVoidAsync("localStorage.setItem", StorageKey, UiText.Codes[language]);
+        }
+    }
+
+    private void OnTextChanged() => InvokeAsync(StateHasChanged);
+}

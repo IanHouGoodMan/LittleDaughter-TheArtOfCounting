@@ -1,0 +1,215 @@
+:root {
+    --ink: #1f2933;
+    --accent: #1b6ec2;
+    --good: #2e7d32;
+    --warn: #c62828;
+    --paper: #fffdf7;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: var(--ink);
+    background: var(--paper);
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1.2rem;
+    background: #03173d;
+    color: white;
+}
+
+.brand {
+    font-weight: 700;
+    letter-spacing: 0.03em;
+}
+
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 1rem 1.2rem 2rem;
+}
+
+footer {
+    text-align: center;
+    padding: 1rem;
+    color: #6b7280;
+    font-size: 0.9rem;
+}
+
+h1 {
+    margin: 0.6rem 0;
+}
+
+h2 {
+    font-size: 1.1rem;
+    margin: 1.2rem 0 0.5rem;
+}
+
+.instructions {
+    font-size: 1.05rem;
+    line-height: 1.5;
+}
+
+.controls, .actions, .status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    align-items: center;
+    margin: 0.8rem 0;
+}
+
+.controls label, .language {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+}
+
+input[type=number] {
+    width: 4rem;
+}
+
+input, select, button {
+    font: inherit;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    border: 1px solid #c3c8d0;
+}
+
+button {
+    cursor: pointer;
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+}
+
+button.secondary {
+    background: white;
+    color: var(--accent);
+}
+
+button:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
+.board {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.5rem;
+    overflow-x: auto;
+}
+
+.figure {
+    display: block;
+    width: 100%;
+    max-height: 70vh;
+    touch-action: manipulation;
+}
+
+.figure .edge {
+    stroke: var(--ink);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+
+.figure .point {
+    cursor: pointer;
+}
+
+.figure .point .hit {
+    fill: transparent;
+}
+
+.figure .point .dot {
+    fill: #9aa5b1;
+}
+
+.figure .point:hover .dot,
+.figure .point.selected .dot {
+    fill: var(--accent);
+}
+
+.figure .point.selected .dot {
+    stroke: white;
+    stroke-width: 2;
+}
+
+.figure .found {
+    fill-opacity: 0.18;
+    stroke: none;
+}
+
+.figure .size-1 { fill: #f59e0b; }
+.figure .size-2 { fill: #10b981; }
+.figure .size-3 { fill: #3b82f6; }
+.figure .size-4 { fill: #8b5cf6; }
+.figure .size-5 { fill: #ec4899; }
+.figure .size-6 { fill: #14b8a6; }
+
+.figure .highlight {
+    fill-opacity: 0.35;
+    stroke-width: 6;
+    stroke-linejoin: round;
+}
+
+.figure .found-one {
+    fill: var(--good);
+    stroke: var(--good);
+}
+
+.figure .missed-one {
+    fill: var(--warn);
+    stroke: var(--warn);
+    stroke-dasharray: 10 6;
+}
+
+.found-count {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.message {
+    margin: 0;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+}
+
+.message.good { background: #e8f5e9; color: var(--good); }
+.message.info { background: #e3f2fd; color: var(--accent); }
+.message.warn { background: #fdecea; color: var(--warn); }
+
+.panel {
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+}
+
+.panel table {
+    border-collapse: collapse;
+}
+
+.panel th, .panel td {
+    padding: 0.3rem 0.9rem;
+    border-bottom: 1px solid #eef0f3;
+    text-align: left;
+}
+
+.panel tr.missing td:last-child { color: var(--warn); }
+.panel tr.done td:last-child { color: var(--good); }
+.panel tr.current { background: #fff7e0; }
+
+.stepper {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-top: 0.8rem;
+}
